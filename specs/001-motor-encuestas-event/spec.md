@@ -131,14 +131,21 @@ to the log; persistence and telemetry are subscribers.
 
 ### Edge Cases
 
-- Advancing while already at a terminal → idempotent `finished`, no new event.
+- After `SESSION_FINISHED` is recorded, the session is **sealed**: `ANSWER` and `BACK`
+  are rejected with `session-sealed`; `NEXT` returns `finished` idempotently, no new event.
 - `back` on the first page → no-op (the trail never becomes empty).
 - Answer to a question not present in the schema → rejected by `decide` (problem), no event.
+- Answer to a question hidden by `visibleWhen`, or not on the current page → rejected.
+- Answer whose kind mismatches the question (number to a select), an unknown `OptionId`,
+  or multiple selections on a single-select → rejected structurally, no event.
+- Out-of-range / over-max-length values ARE recorded (the user really entered them);
+  they surface as problems on `NEXT` and via the per-question validation selector.
 - `selected` guard over a non-select question → `unknown` (Kleene), never an exception.
 - `score` with an option lacking `weight` → weight 0 (documented).
 - Page with zero questions → valid (informational pages), advances directly.
 - Empty log → `replay` yields the initial state at `entry`.
 - Event with an unknown (future) `v` → upcast fails explicitly; never partial interpretation.
+- Event with non-empty `path` on a v1 engine → rejected (fail-closed; subflow scope unknown).
 - Two `ANSWERED` for the same question → last one wins (the log keeps both).
 
 ## Requirements *(mandatory)*
@@ -177,7 +184,35 @@ to the log; persistence and telemetry are subscribers.
   selects with static `options` and optional `weight`; texts as
   `TextRef{key, fallback}` — resolved text never appears in data or events.
 - **FR-014**: Pure selectors exported for hosts: current page, visible questions,
-  expression evaluation (score), progress — no host computes business logic.
+  per-question validation (for inline errors), expression evaluation (score),
+  progress, `canGoBack`, `isFinished`/outcome — no host computes business logic.
+- **FR-015**: Normative evaluation semantics under missing/inactive/mistyped data:
+  `answered` is always definite (true/false); `selected`, `cmp`, `score` yield
+  `unknown` when their data is missing, inactive, or of the wrong kind; `not/all/any`
+  follow Kleene tables (normative truth tables in the plan's data model). An edge
+  fires only on definitive `true`.
+- **FR-016**: `ANSWER` is valid only for questions visible on the current page.
+  Structural mismatches (kind, unknown option, select arity) are rejected with no
+  event; semantic violations (range, maxLength, required) are recorded and surface
+  at `NEXT` and via the validation selector.
+- **FR-017**: Sealed sessions — after `SESSION_FINISHED`, `decide` rejects `ANSWER`
+  and `BACK` with `session-sealed`; `NEXT` is idempotent. Corrections happen in a new
+  session (explicit reopen may arrive in a future version as a recorded event).
+- **FR-018**: Replay integrity — `replay` verifies the supplied schema's content hash
+  against `SESSION_STARTED.schemaHash` and fails explicitly (`schema-mismatch`);
+  events inconsistent with the graph (e.g., `ADVANCED` to a nonexistent node) fail
+  explicitly (`log-schema-mismatch`); never garbage state.
+- **FR-019**: Engine semantics never read `at` — timestamps are provenance, not
+  input. Event order is log position, never wall-clock. (No time-dependent guards
+  can ever exist without a constitutional amendment.)
+- **FR-020**: Canonical serialization for hashing — schemas hash as SHA-256 over
+  canonical JSON (lexicographically sorted keys, UTF-8, no insignificant
+  whitespace); the hash is computed by the shell at `START`.
+- **FR-021**: Normative Problem-code registry (runtime): `required`, `out-of-range`,
+  `too-long`, `no-edge`, `missing-node`, `unknown-question`, `answer-kind-mismatch`,
+  `unknown-option`, `arity-mismatch`, `not-current-page`, `session-sealed`,
+  `schema-mismatch`, `log-schema-mismatch`. Codes are API: adapters and the LLM loop
+  depend on them; additions are non-breaking, renames are breaking.
 
 ### Key Entities
 
@@ -208,6 +243,11 @@ to the log; persistence and telemetry are subscribers.
   conclusion — the "fabricated outcome" bug class is impossible to reproduce.
 - **SC-006**: A session serialized to JSON and restored in a fresh process continues
   exactly where it was (US2.1) — demonstrated in a flow-session integration test.
+- **SC-007**: Replaying a log against a schema with a different content hash fails
+  with `schema-mismatch` — demonstrated by test (the schemaHash guarantee is
+  enforced, not decorative).
+- **SC-008**: Property test — for any generated command sequence, no event ever
+  follows `SESSION_FINISHED` in the log (sealed sessions hold universally).
 
 ## Clarifications (resolved during design phase, 2026-07-19)
 
@@ -223,6 +263,18 @@ to the log; persistence and telemetry are subscribers.
 - Authoring integrity: `schemaHash` in `SESSION_STARTED` (dev schemas overwritten
   in place become detectable).
 - Kernel: 4 admission criteria; named evaluators = macros expanding to kernel.
+
+### Completeness pass (2026-07-19, later same day)
+
+- Finished sessions are **sealed** (FR-017); reopen, if ever, will be a recorded event.
+- Validation split: structural at `ANSWER` (rejected, no event), semantic at `NEXT`
+  (recorded facts, surfaced as problems) — the log keeps what the user really entered.
+- `replay` **verifies** `schemaHash` (FR-018) — the hash is enforced, not decorative.
+- Canonical JSON (sorted keys) + SHA-256 for schema hashing (FR-020).
+- `at` is provenance only; engine semantics are time-independent (FR-019).
+- Kleene primitive table: `answered` definite; `selected/cmp/score` unknown on
+  missing/inactive/mistyped; edge fires only on definitive true (FR-015).
+- Problem codes are a stable API surface (FR-021).
 
 ### Deferred (recorded, not blocking v1)
 
@@ -247,3 +299,8 @@ to the log; persistence and telemetry are subscribers.
   flow-session API; they do not constrain this spec.
 - Volumes: session logs of tens–hundreds of events; graphs of tens–hundreds of nodes.
   No extraordinary performance requirements.
+- The log is a per-session container; session identity and multi-session storage
+  tagging are the host's responsibility (the shell exposes one session per instance).
+- Left to the plan phase by design: full Kleene truth tables (data model), golden
+  file format, progress formula, edge-coverage counting rules, notification/reentrancy
+  contract of the shell.

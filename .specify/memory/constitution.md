@@ -37,9 +37,12 @@ Every event carries: `v` (event-format version), `at` (epoch millis UTC, minted 
 emitting shell), `source` (`human` | `agent` | `import`), and `path`
 (`Array<{flow: string, instance?: string}>` — subflow scope; empty in v1).
 `SESSION_STARTED` includes `schemaId`, `schemaVersion`, and the **content hash of the
-schema**. Events on disk are never rewritten; a single pure upcast function at the read
-boundary composes migrations. Instance ids are opaque, stable, minted in the shell and
-arrive inside the command — the core never generates ids.
+schema** (SHA-256 over canonical JSON), which `replay` verifies against the supplied
+schema. `at` is provenance, never an input: engine semantics are time-independent, and
+event order is log position, not wall-clock. Events on disk are never rewritten; a
+single pure upcast function at the read boundary composes migrations. Instance ids are
+opaque, stable, minted in the shell and arrive inside the command — the core never
+generates ids.
 
 ### IV. Semantics closed by specification, not by implementation
 (a) **Three-valued logic (Kleene)**: `unknown` propagates; an edge fires only if its
@@ -107,4 +110,4 @@ This constitution supersedes all other practices. Amendments: PR with rationale,
 impact on already-recorded events (touching Principle III requires an upcast), and
 updates to affected specs.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-19 | **Last Amended**: 2026-07-19
+**Version**: 1.2.0 | **Ratified**: 2026-07-19 | **Last Amended**: 2026-07-19

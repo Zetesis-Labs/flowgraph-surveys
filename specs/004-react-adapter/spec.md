@@ -22,6 +22,13 @@ React is a **subscriber of a truth it does not own**. The core is the source of 
   synchronously; a blocked "Next" renders from local `useState`, never touches the log.
 - Renderer registry: `QuestionDef.kind → component`, with per-question-id overrides
   (`byId`) for bespoke widgets (e.g., card-stack selects).
+- **Renderer contract**: components are dumb — they receive
+  `{question, value, problems, onAnswer}` and render; they never inspect the graph,
+  the trail, or other questions. Cross-question behavior is the engine's job
+  (visibility, validation), surfaced through the same props.
+- **Event delivery semantics**: `subscribeEvents` delivers only events appended after
+  subscription, in log order; catch-up is `getEvents()`. State subscribers
+  (`subscribe`) are notified synchronously after each successful dispatch.
 - `TextRef` resolution (i18n) happens here, at render time — resolved text never
   flows back into data.
 - Persistence example ships with the adapter: a `subscribeEvents` listener appending
@@ -32,6 +39,8 @@ React is a **subscriber of a truth it does not own**. The core is the source of 
 
 ## Open questions
 
+- Reentrancy: is `dispatch` from within a notification allowed, queued, or rejected?
+  (Shell contract detail — settle in the plan phase of spec 001/this spec.)
 - SSR story (`getServerSnapshot`) — the pure core makes it possible; is it needed?
 - Controlled-input ergonomics for high-frequency typing vs dispatch-per-keystroke
   (local draft state committed on blur?).
