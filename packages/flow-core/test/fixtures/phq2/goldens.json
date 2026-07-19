@@ -1,0 +1,26 @@
+{
+  "formatVersion": 1,
+  "schema": { "id": "phq2", "version": "1.0.0" },
+  "cases": [
+    {
+      "id": "referral-route",
+      "commands": [
+        { "kind": "START", "source": "agent", "at": 100 },
+        { "kind": "ANSWER", "q": "q1", "value": ["often"] },
+        { "kind": "ANSWER", "q": "q2", "value": ["often"] },
+        { "kind": "NEXT" }
+      ],
+      "expect": { "outcome": "referral", "state": { "current": "referral" } }
+    },
+    {
+      "id": "negative-route",
+      "commands": [
+        { "kind": "START" },
+        { "kind": "ANSWER", "q": "q1", "value": ["sometimes"] },
+        { "kind": "ANSWER", "q": "q2", "value": ["sometimes"] },
+        { "kind": "NEXT" }
+      ],
+      "expect": { "outcome": "negative", "state": { "current": "negative" } }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+coverage/
+.agents/
+.claude/
+.specify/
+specs/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.tgz

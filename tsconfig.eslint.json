@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "composite": false,
+    "noEmit": true,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    ".dependency-cruiser.cjs",
+    "*.js",
+    "*.cjs",
+    "scripts/**/*.mjs",
+    "test/**/*.mjs",
+    "test/**/*.ts",
+    "*.ts",
+    "packages/*/src/**/*.ts",
+    "packages/*/test/**/*.ts"
+  ]
+}

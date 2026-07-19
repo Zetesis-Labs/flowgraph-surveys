@@ -1,0 +1,39 @@
+{
+  "name": "@flowgraph/core",
+  "version": "0.1.0",
+  "description": "Pure event-sourced graph and survey engine",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck:prod": "tsc -p tsconfig.json --noEmit",
+    "clean": "tsc -b --clean",
+    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run --config ../../vitest.config.ts --project core",
+    "test:authoring": "vitest run --config ../../vitest.config.ts --project core test/integration/check.test.ts test/integration/probe.test.ts",
+    "test:goldens": "vitest run --config ../../vitest.config.ts --project core test/integration/golden.test.ts",
+    "test:replay": "vitest run --config ../../vitest.config.ts --project core test/integration/replay.test.ts test/unit/upcast.test.ts"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "fast-check": "4.9.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

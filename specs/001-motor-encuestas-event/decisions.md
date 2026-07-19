@@ -9,6 +9,9 @@ the same ceremony as a constitutional amendment.
 
 - TypeScript, `strict` + `noUncheckedIndexedAccess`. pnpm workspaces monorepo.
 - Tests: vitest; property-based testing with fast-check.
+- CI coverage: 100% statements, branches, functions, and lines globally and per
+  executable source file in flow-core and flow-session. Executable-code exclusions
+  require a documented human waiver.
 - `zod` at parse boundaries only (incoming schemas, events, persisted state).
   Core internals are zod-free; parsed values flow as plain typed data.
 
@@ -38,19 +41,24 @@ apply(state, event): FlowState                      // total
 replay(schema, events): Result<FlowState, Problem>  // verifies schemaHash; explicit failures
 check(schema): SchemaProblem[]
 probe(schema): ProbeReport
-createSession(schema, pastEvents?): {
-  dispatch, getSnapshot, getEvents, subscribe, subscribeEvents
-}
+createSession(schema, pastEvents?): Result<FlowSession, Problem>
 ```
+
+This completes the earlier sketch so restoration can surface `replay` failures without
+throwing or exposing a partial session.
 
 - `dispatch` returns the `Result` synchronously; rejections never notify subscribers
   and never touch the log.
 - `getSnapshot`: stable reference between notifications; new reference after each
   applied batch (React memo-friendly).
 - `subscribeEvents`: only events appended after subscription, in log order; catch-up
-  via `getEvents()`. State notifications are synchronous post-append.
+  via `getEvents()`. It receives one readonly batch per successful non-empty dispatch.
+  State notifications are synchronous post-append and occur once per batch.
 - Commands v1: `START`, `ANSWER`, `NEXT`, `BACK`. Restore = `createSession(schema,
   events)` — there is no other hydration path.
+- Every command carries shell-supplied `meta{at,source,path}`; `START` also carries
+  `schemaHash`. Session start is explicit and unique.
+- Dispatch during notification is rejected with `reentrant-dispatch`.
 
 ## Wire formats
 
@@ -62,10 +70,17 @@ createSession(schema, pastEvents?): {
 - Ids are branded strings (`NodeId`, `QuestionId`, `OptionId`); instance ids opaque,
   minted in the shell, arriving inside commands.
 - Schema hash: SHA-256 over canonical JSON — lexicographically sorted keys, UTF-8,
-  no insignificant whitespace. Computed by the shell at `START`; verified by `replay`.
+  no insignificant whitespace. Core exports pure synchronous `hashSchema`; the shell
+  calls it for `START`, while `decide` and `replay` recompute and verify it.
 - `TextRef { key, fallback }`; resolved text never enters data or events.
 - Graph: `{ id, version, entry, nodes: Record<NodeId, Node> }`; ordered edges;
   first definitively-true guard wins.
+- Graphs are acyclic in v1. Entry identifies a page; same-page/same-target parallel
+  edges are rejected because `ADVANCED{from,to}` must identify coverage
+  reconstructibly; edge guards may reference only their current or ancestor pages.
+- The composed v1 read-boundary upcast is an identity migration that rejects unknown
+  future versions and never rewrites disk. Concrete v1→v2 migration behavior is
+  deferred until the v2 wire format exists.
 
 ## Semantics (closed — normative detail in spec 001 FR-015..021)
 
@@ -78,14 +93,25 @@ createSession(schema, pastEvents?): {
 - `at` is provenance, never an input; event order = log position.
 - Kernel v1: `always/answered/selected/not/all/any/cmp` + `num/answer/score/sum`.
   Evaluators-with-names are authoring-time macros expanding to kernel.
+- Numeric wire values and weights are scaled safe integers; arithmetic is exact and
+  overflow becomes unknown. K3 tables use mathematical empty identities.
+- Terminal `NEXT` emits the atomic ordered batch `[ADVANCED, SESSION_FINISHED]`.
 
-## Open — the plan phase decides (do not assume)
+## Resolved by the implementation plan (2026-07-19)
 
-- Internal file/module layout of flow-core; naming conventions beyond the API above.
-- Golden file format; edge-coverage counting rules; probe exploration budget.
-- Progress formula; problem *message* wording (codes are closed API, messages are not).
-- Session shell reentrancy contract (dispatch during notification).
-- Packaging/publishing (build tool, exports maps) and CI pipeline details.
-- Numeric representation beyond "integer weights for scores" (floats vs scaled ints,
-  `eq` on non-integers).
-- Full normative Kleene truth tables (data-model artifact of the plan).
+- Core and session are separate ESM-only ES2022 packages built with `tsc -b`; internal
+  module layout and CI boundary gates are defined in `plan.md`.
+- Goldens are versioned declarative JSON; coverage is reconstructed by `(from,to)` from
+  replayed `ADVANCED` events.
+- Probe explores at most 4096 deterministic assignments per conditional page and
+  reports truncation without claiming completeness.
+- Progress uses completed trail edges over completed plus the longest remaining path
+  in the checked DAG; it is monotonic on forward movement.
+- Runtime problems expose codes and structured details; adapters own localized
+  messages.
+- Session reentrancy is rejected; accepted batches commit before event listeners and
+  one state notification.
+- Numeric values are safe integers with exact comparison and internal bigint
+  accumulation.
+- Strong Kleene truth tables, data shapes, hashing, validation, and notification
+  contracts are normative in `data-model.md` and `contracts/`.

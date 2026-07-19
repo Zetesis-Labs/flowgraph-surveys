@@ -1,0 +1,335 @@
+{
+  "cases": [
+    {
+      "id": "missing-entry",
+      "expected": "missing-entry",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "absent",
+        "nodes": { "done": { "kind": "terminal", "outcome": "done" } }
+      }
+    },
+    {
+      "id": "entry-not-page",
+      "expected": "entry-not-page",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "done",
+        "nodes": { "done": { "kind": "terminal", "outcome": "done" } }
+      }
+    },
+    {
+      "id": "dangling-node",
+      "expected": "dangling-node",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "absent", "when": { "kind": "always" } }]
+          }
+        }
+      }
+    },
+    {
+      "id": "unreachable-node",
+      "expected": "unreachable-node",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "orphan": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "no-terminal-reachable",
+      "expected": "no-terminal-reachable",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": { "page": { "kind": "page", "questions": [], "edges": [] } }
+      }
+    },
+    {
+      "id": "self-loop",
+      "expected": "cycle-detected",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "page", "when": { "kind": "always" } }]
+          }
+        }
+      }
+    },
+    {
+      "id": "multi-node-cycle",
+      "expected": "cycle-detected",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "a",
+        "nodes": {
+          "a": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "b", "when": { "kind": "always" } }]
+          },
+          "b": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "a", "when": { "kind": "always" } }]
+          }
+        }
+      }
+    },
+    {
+      "id": "duplicate-question",
+      "expected": "duplicate-question",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              { "kind": "text", "id": "same", "text": { "key": "a", "fallback": "A" } },
+              { "kind": "text", "id": "same", "text": { "key": "b", "fallback": "B" } }
+            ],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "duplicate-option",
+      "expected": "duplicate-option",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              {
+                "kind": "select",
+                "id": "q",
+                "text": { "key": "q", "fallback": "Q" },
+                "options": [
+                  { "id": "same", "text": { "key": "a", "fallback": "A" } },
+                  { "id": "same", "text": { "key": "b", "fallback": "B" } }
+                ]
+              }
+            ],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "duplicate-edge-target",
+      "expected": "duplicate-edge-target",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [
+              { "to": "done", "when": { "kind": "always" } },
+              { "to": "done", "when": { "kind": "always" } }
+            ]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "shadowed-edge",
+      "expected": "shadowed-edge",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [
+              { "to": "a", "when": { "kind": "always" } },
+              { "to": "b", "when": { "kind": "always" } }
+            ]
+          },
+          "a": { "kind": "terminal", "outcome": "a" },
+          "b": { "kind": "terminal", "outcome": "b" }
+        }
+      }
+    },
+    {
+      "id": "ill-founded-visibility",
+      "expected": "ill-founded-visibility",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              {
+                "kind": "text",
+                "id": "first",
+                "text": { "key": "first", "fallback": "First" },
+                "visibleWhen": { "kind": "answered", "q": "later" }
+              },
+              { "kind": "text", "id": "later", "text": { "key": "later", "fallback": "Later" } }
+            ],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "invalid-expression-reference",
+      "expected": "invalid-expression-reference",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [],
+            "edges": [{ "to": "done", "when": { "kind": "answered", "q": "absent" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "invalid-constraint",
+      "expected": "invalid-constraint",
+      "schema": {
+        "id": "broken",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              {
+                "kind": "number",
+                "id": "n",
+                "text": { "key": "n", "fallback": "N" },
+                "min": 10,
+                "max": 1
+              }
+            ],
+            "edges": [{ "to": "done", "when": { "kind": "always" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "semantic-dead-end",
+      "expected": "semantic-dead-end",
+      "schema": {
+        "id": "dead-end",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              {
+                "kind": "select",
+                "id": "route",
+                "text": { "key": "route", "fallback": "Route" },
+                "options": [
+                  { "id": "a", "text": { "key": "a", "fallback": "A" } },
+                  { "id": "b", "text": { "key": "b", "fallback": "B" } }
+                ]
+              }
+            ],
+            "edges": [{ "to": "done", "when": { "kind": "selected", "q": "route", "option": "a" } }]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    },
+    {
+      "id": "probe-budget",
+      "expected": "probe-budget-exceeded",
+      "schema": {
+        "id": "budget",
+        "version": "1",
+        "entry": "page",
+        "nodes": {
+          "page": {
+            "kind": "page",
+            "questions": [
+              {
+                "kind": "select",
+                "id": "many",
+                "multiple": true,
+                "text": { "key": "many", "fallback": "Many" },
+                "options": [
+                  { "id": "o1", "text": { "key": "o1", "fallback": "1" } },
+                  { "id": "o2", "text": { "key": "o2", "fallback": "2" } },
+                  { "id": "o3", "text": { "key": "o3", "fallback": "3" } },
+                  { "id": "o4", "text": { "key": "o4", "fallback": "4" } },
+                  { "id": "o5", "text": { "key": "o5", "fallback": "5" } },
+                  { "id": "o6", "text": { "key": "o6", "fallback": "6" } },
+                  { "id": "o7", "text": { "key": "o7", "fallback": "7" } },
+                  { "id": "o8", "text": { "key": "o8", "fallback": "8" } },
+                  { "id": "o9", "text": { "key": "o9", "fallback": "9" } },
+                  { "id": "o10", "text": { "key": "o10", "fallback": "10" } },
+                  { "id": "o11", "text": { "key": "o11", "fallback": "11" } },
+                  { "id": "o12", "text": { "key": "o12", "fallback": "12" } },
+                  { "id": "o13", "text": { "key": "o13", "fallback": "13" } }
+                ]
+              }
+            ],
+            "edges": [
+              {
+                "to": "done",
+                "when": { "kind": "selected", "q": "many", "option": "o1" }
+              }
+            ]
+          },
+          "done": { "kind": "terminal", "outcome": "done" }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "flowgraph",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc -b --pretty false && pnpm -r typecheck:test",
+    "boundaries": "depcruise packages --config .dependency-cruiser.cjs",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "build": "tsc -b --pretty false",
+    "package:check": "node scripts/package-check.mjs",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.1.1",
+    "@vitest/coverage-v8": "4.1.10",
+    "dependency-cruiser": "18.1.0",
+    "eslint": "10.7.0",
+    "fast-check": "4.9.0",
+    "prettier": "3.9.5",
+    "publint": "0.3.21",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.64.0",
+    "vitest": "4.1.10"
+  }
+}

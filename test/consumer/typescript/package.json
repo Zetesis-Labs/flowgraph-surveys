@@ -1,0 +1,12 @@
+{
+  "name": "flowgraph-typescript-smoke",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@flowgraph/core": "0.1.0",
+    "@flowgraph/session": "0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

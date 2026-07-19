@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "schema": { "id": "retail-return", "version": "1.0.0" },
+  "cases": [
+    {
+      "id": "wrong-item",
+      "commands": [
+        { "kind": "START" },
+        { "kind": "ANSWER", "q": "reason", "value": ["wrong"] },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "label", "value": "photo" },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "email", "value": "wrong@example.test" },
+        { "kind": "NEXT" }
+      ],
+      "expect": {
+        "outcome": "completed",
+        "state": {
+          "current": "done",
+          "trail": ["reason", "label", "shared", "done"],
+          "activeAnswers": {
+            "reason": ["wrong"],
+            "label": "photo",
+            "email": "wrong@example.test"
+          }
+        }
+      }
+    },
+    {
+      "id": "branch-correction",
+      "commands": [
+        { "kind": "START" },
+        { "kind": "ANSWER", "q": "reason", "value": ["wrong"] },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "label", "value": "retained" },
+        { "kind": "BACK" },
+        { "kind": "ANSWER", "q": "reason", "value": ["damaged"] },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "damage", "value": "cracked" },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "email", "value": "damage@example.test" },
+        { "kind": "NEXT" }
+      ],
+      "expect": {
+        "outcome": "completed",
+        "state": {
+          "current": "done",
+          "activeAnswers": {
+            "reason": ["damaged"],
+            "damage": "cracked",
+            "email": "damage@example.test"
+          }
+        }
+      }
+    },
+    {
+      "id": "other-item",
+      "commands": [
+        { "kind": "START" },
+        { "kind": "ANSWER", "q": "reason", "value": ["other"] },
+        { "kind": "NEXT" },
+        { "kind": "ANSWER", "q": "email", "value": "other@example.test" },
+        { "kind": "NEXT" }
+      ],
+      "expect": { "outcome": "completed" }
+    }
+  ]
+}

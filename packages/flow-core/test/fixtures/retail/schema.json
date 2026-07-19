@@ -1,0 +1,69 @@
+{
+  "id": "retail-return",
+  "version": "1.0.0",
+  "entry": "reason",
+  "nodes": {
+    "reason": {
+      "kind": "page",
+      "title": { "key": "reason.title", "fallback": "Return reason" },
+      "questions": [
+        {
+          "kind": "select",
+          "id": "reason",
+          "text": { "key": "reason", "fallback": "What happened?" },
+          "required": true,
+          "options": [
+            { "id": "wrong", "text": { "key": "reason.wrong", "fallback": "Wrong item" } },
+            { "id": "damaged", "text": { "key": "reason.damaged", "fallback": "Damaged" } },
+            { "id": "other", "text": { "key": "reason.other", "fallback": "Other" } }
+          ]
+        }
+      ],
+      "edges": [
+        { "to": "label", "when": { "kind": "selected", "q": "reason", "option": "wrong" } },
+        {
+          "to": "damage",
+          "when": { "kind": "selected", "q": "reason", "option": "damaged" }
+        },
+        { "to": "shared", "when": { "kind": "selected", "q": "reason", "option": "other" } }
+      ]
+    },
+    "label": {
+      "kind": "page",
+      "questions": [
+        {
+          "kind": "text",
+          "id": "label",
+          "text": { "key": "label", "fallback": "Label photo reference" },
+          "required": true
+        }
+      ],
+      "edges": [{ "to": "shared", "when": { "kind": "always" } }]
+    },
+    "damage": {
+      "kind": "page",
+      "questions": [
+        {
+          "kind": "text",
+          "id": "damage",
+          "text": { "key": "damage", "fallback": "Damage description" },
+          "required": true
+        }
+      ],
+      "edges": [{ "to": "shared", "when": { "kind": "always" } }]
+    },
+    "shared": {
+      "kind": "page",
+      "questions": [
+        {
+          "kind": "text",
+          "id": "email",
+          "text": { "key": "email", "fallback": "Email" },
+          "required": true
+        }
+      ],
+      "edges": [{ "to": "done", "when": { "kind": "always" } }]
+    },
+    "done": { "kind": "terminal", "outcome": "completed" }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "id": "phq2",
+  "version": "1.0.0",
+  "entry": "screen",
+  "nodes": {
+    "screen": {
+      "kind": "page",
+      "questions": [
+        {
+          "kind": "select",
+          "id": "q1",
+          "text": { "key": "q1", "fallback": "Question 1" },
+          "required": true,
+          "options": [
+            { "id": "never", "text": { "key": "never", "fallback": "Never" }, "weight": 0 },
+            {
+              "id": "sometimes",
+              "text": { "key": "sometimes", "fallback": "Sometimes" },
+              "weight": 1
+            },
+            { "id": "often", "text": { "key": "often", "fallback": "Often" }, "weight": 2 }
+          ]
+        },
+        {
+          "kind": "select",
+          "id": "q2",
+          "text": { "key": "q2", "fallback": "Question 2" },
+          "required": true,
+          "options": [
+            { "id": "never", "text": { "key": "never", "fallback": "Never" }, "weight": 0 },
+            {
+              "id": "sometimes",
+              "text": { "key": "sometimes", "fallback": "Sometimes" },
+              "weight": 1
+            },
+            { "id": "often", "text": { "key": "often", "fallback": "Often" }, "weight": 2 }
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "to": "referral",
+          "when": {
+            "kind": "cmp",
+            "op": "gte",
+            "left": {
+              "kind": "sum",
+              "values": [
+                { "kind": "score", "q": "q1" },
+                { "kind": "score", "q": "q2" }
+              ]
+            },
+            "right": { "kind": "num", "value": 3 }
+          }
+        },
+        {
+          "to": "negative",
+          "when": {
+            "kind": "cmp",
+            "op": "lt",
+            "left": {
+              "kind": "sum",
+              "values": [
+                { "kind": "score", "q": "q1" },
+                { "kind": "score", "q": "q2" }
+              ]
+            },
+            "right": { "kind": "num", "value": 3 }
+          }
+        }
+      ]
+    },
+    "referral": { "kind": "terminal", "outcome": "referral" },
+    "negative": { "kind": "terminal", "outcome": "negative" }
+  }
+}
