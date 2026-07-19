@@ -19,6 +19,12 @@ module.exports = {
       from: { path: '^packages/flow-session/src' },
       to: { path: '^packages/flow-core/src/(?!index\\.ts$)' },
     },
+    {
+      name: 'react-public-flowgraph-only',
+      severity: 'error',
+      from: { path: '^packages/flow-react/src' },
+      to: { path: '^packages/(flow-core|flow-session)/src/(?!index\\.ts$)' },
+    },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

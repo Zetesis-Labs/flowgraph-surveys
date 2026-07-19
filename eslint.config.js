@@ -8,6 +8,7 @@ export default defineConfig(
   {
     ignores: [
       '**/dist/**',
+      '**/dist-types/**',
       '**/build/**',
       '**/coverage/**',
       '**/node_modules/**',
@@ -97,6 +98,22 @@ export default defineConfig(
             {
               group: ['@flowgraph/core/*'],
               message: 'Session may import only the public @flowgraph/core root',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/flow-react/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@flowgraph/core/*', '@flowgraph/session/*'],
+              message: 'React adapter may import only public FlowGraph package roots',
             },
           ],
         },

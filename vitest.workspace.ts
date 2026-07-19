@@ -18,4 +18,24 @@ export default [
       sequence: { shuffle: false },
     },
   }),
+  defineProject({
+    root: `${import.meta.dirname}/packages/flow-react`,
+    test: {
+      name: 'react',
+      environment: 'jsdom',
+      include: ['test/**/*.test.ts', 'test/**/*.test.tsx'],
+      setupFiles: ['./test/setup.ts'],
+      sequence: { shuffle: false },
+    },
+  }),
+  defineProject({
+    root: `${import.meta.dirname}/apps/survey-demo`,
+    test: {
+      name: 'survey-demo',
+      environment: 'jsdom',
+      include: ['test/**/*.test.ts', 'test/**/*.test.tsx'],
+      setupFiles: ['./test/setup.ts'],
+      sequence: { shuffle: false },
+    },
+  }),
 ]

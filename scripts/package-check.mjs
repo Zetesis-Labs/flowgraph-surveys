@@ -12,31 +12,39 @@ const run = (command, args, cwd = root) => execFileSync(command, args, { cwd, st
 run('pnpm', ['build'])
 run('pnpm', ['--filter', '@flowgraph/core', 'pack', '--pack-destination', tarballs])
 run('pnpm', ['--filter', '@flowgraph/session', 'pack', '--pack-destination', tarballs])
+run('pnpm', ['--filter', '@flowgraph/react', 'pack', '--pack-destination', tarballs])
 
 const archives = readdirSync(tarballs).map((name) => join(tarballs, name))
 const coreArchive = archives.find((name) => name.includes('flowgraph-core'))
 const sessionArchive = archives.find((name) => name.includes('flowgraph-session'))
-if (!coreArchive || !sessionArchive) throw new Error('Expected package archives were not created')
+const reactArchive = archives.find((name) => name.includes('flowgraph-react'))
+if (!coreArchive || !sessionArchive || !reactArchive) {
+  throw new Error('Expected package archives were not created')
+}
 
-for (const archive of [coreArchive, sessionArchive]) {
+for (const archive of [coreArchive, sessionArchive, reactArchive]) {
   run('pnpm', ['exec', 'publint', archive, '--strict'])
   run('pnpm', ['exec', 'attw', archive, '--profile', 'esm-only'])
 }
 
-for (const kind of ['esm', 'typescript']) {
+for (const kind of ['esm', 'typescript', 'react-esm', 'react-typescript']) {
   const consumer = join(temporary, kind)
   cpSync(join(root, 'test', 'consumer', kind), consumer, { recursive: true })
   const manifestPath = join(consumer, 'package.json')
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   manifest.dependencies['@flowgraph/core'] = `file:${coreArchive}`
   manifest.dependencies['@flowgraph/session'] = `file:${sessionArchive}`
+  if (kind.startsWith('react-')) {
+    manifest.dependencies['@flowgraph/react'] = `file:${reactArchive}`
+  }
   manifest.pnpm = {
     overrides: {
       '@flowgraph/core': `file:${coreArchive}`,
+      '@flowgraph/session': `file:${sessionArchive}`,
     },
   }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   run('pnpm', ['install', '--offline', '--ignore-workspace'], consumer)
-  if (kind === 'esm') run('node', ['smoke.mjs'], consumer)
+  if (kind.endsWith('esm')) run('node', ['smoke.mjs'], consumer)
   else run('pnpm', ['exec', 'tsc', '-p', 'tsconfig.json'], consumer)
 }

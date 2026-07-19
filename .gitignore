@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-types/
 build/
 coverage/
 *.log
@@ -11,3 +12,5 @@ Thumbs.db
 .vscode/
 .idea/
 *.tgz
+playwright-report/
+test-results/

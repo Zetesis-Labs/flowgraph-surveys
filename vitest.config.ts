@@ -8,7 +8,7 @@ export default defineConfig({
     projects,
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.ts'],
+      include: ['packages/*/src/**/*.{ts,tsx}'],
       exclude: ['**/*.d.ts'],
       reporter: ['text', 'json-summary', 'html'],
       thresholds: {

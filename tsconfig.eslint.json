@@ -5,7 +5,9 @@
     "checkJs": false,
     "composite": false,
     "noEmit": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vitest/globals"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
   },
   "include": [
     ".dependency-cruiser.cjs",
@@ -14,8 +16,16 @@
     "scripts/**/*.mjs",
     "test/**/*.mjs",
     "test/**/*.ts",
+    "test/**/*.tsx",
     "*.ts",
+    "apps/*/*.ts",
     "packages/*/src/**/*.ts",
-    "packages/*/test/**/*.ts"
+    "packages/*/src/**/*.tsx",
+    "packages/*/test/**/*.ts",
+    "packages/*/test/**/*.tsx",
+    "apps/*/src/**/*.ts",
+    "apps/*/src/**/*.tsx",
+    "apps/*/test/**/*.ts",
+    "apps/*/test/**/*.tsx"
   ]
 }
