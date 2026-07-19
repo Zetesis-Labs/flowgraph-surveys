@@ -224,6 +224,19 @@ to the log; persistence and telemetry are subscribers.
   in place become detectable).
 - Kernel: 4 admission criteria; named evaluators = macros expanding to kernel.
 
+### Deferred (recorded, not blocking v1)
+
+- **Logical grouping vs presentational pagination**: v1 keeps page = graph node;
+  renderers may re-paginate visually (e.g., one page per screen on mobile). Revisit
+  as a separate layer if verticals demand it.
+- **Numeric representation policy**: floats vs scaled integers, `eq` on non-integers.
+  To be settled in the plan phase; v1 convention: integer weights for scores.
+- **Evaluator macro expansion point**: macros expand to kernel at authoring time
+  (the engine only ever sees kernel); the macro catalog itself ships with authoring
+  tooling, not with the engine. Detail in plan phase.
+- **Telemetry format** (e.g., blocked-attempt analytics): subscriber-side concern,
+  out of core.
+
 ## Assumptions
 
 - The host supplies the exact schema (id+version) on restore; the schema registry is

@@ -23,8 +23,11 @@ Neither fp-ts nor Effect in the kernel.
 State is a projection: `state = replay(schema, events) = events.reduce(apply, init)`.
 Core API: `decide(schema, state, command) → Result<Event[], Problem[]>` (pure,
 validates intent) and `apply(state, event) → state` (pure, total). The snapshot is a
-cache, never the truth. Minimal event vocabulary (5): `SESSION_STARTED`, `ANSWERED`,
-`ADVANCED`, `WENT_BACK`, `SESSION_FINISHED`. Facts are recorded, including the
+cache, never the truth. Minimal session-event vocabulary in v1 (5): `SESSION_STARTED`,
+`ANSWERED`, `ADVANCED`, `WENT_BACK`, `SESSION_FINISHED`. The vocabulary grows only by
+constitutional amendment and never mutates existing kinds (planned extensions:
+`SCHEMA_MIGRATED` with session migration; `ITEM_ADDED`/`ITEM_REMOVED` with v1.1
+subflows). Facts are recorded, including the
 transitions taken (history is not rewritten by schema hotfixes). Rejections (blocked)
 are NOT events: they return synchronously to the caller; ephemeral friction lives in
 the client, telemetry is a separate subscriber.
@@ -88,6 +91,8 @@ next to the example schemas and run in CI as the engine's conformance suite.
   editor, i18n resolution, multi-actor, multi-device sync, analytics.
 - Subflows/repeatables are implemented in v1.1, but their footprint in the event
   format (`path`, instances) exists from v1.
+- Question ids are stable across schema versions (longitudinal-analytics contract);
+  renaming a question id is a breaking schema change, not an edit.
 
 ## Development Workflow
 
@@ -102,4 +107,4 @@ This constitution supersedes all other practices. Amendments: PR with rationale,
 impact on already-recorded events (touching Principle III requires an upcast), and
 updates to affected specs.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-19 | **Last Amended**: 2026-07-19
+**Version**: 1.1.0 | **Ratified**: 2026-07-19 | **Last Amended**: 2026-07-19
