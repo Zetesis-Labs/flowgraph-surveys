@@ -1,10 +1,12 @@
 import {
+  type AttachmentRef,
   type Command,
   type CommandMeta,
   type Event,
   type FlowSchema,
   type FlowState,
   type NodeId,
+  toAttachmentId,
   toNodeId,
   toOutcomeId,
   toQuestionId,
@@ -15,6 +17,42 @@ import {
 } from '../../src/index.js'
 
 export const TEST_HASH = toSchemaHash('a'.repeat(64))
+
+export const attachment = (
+  name = 'fit.jpg',
+  overrides: Partial<AttachmentRef> = {},
+): AttachmentRef => ({
+  id: toAttachmentId(`attachment-${name}`),
+  name,
+  mediaType: 'image/jpeg',
+  size: toSafeInt(1024),
+  ...overrides,
+})
+
+export const attachmentSchema = (): FlowSchema => ({
+  id: toSchemaId('attachments'),
+  version: toSchemaVersion('1.0.0'),
+  entry: toNodeId('page'),
+  nodes: {
+    page: {
+      kind: 'page',
+      questions: [
+        {
+          kind: 'attachment',
+          id: toQuestionId('photos'),
+          text: { key: 'photos', fallback: 'Photos' },
+          required: true,
+          minFiles: toSafeInt(1),
+          maxFiles: toSafeInt(4),
+          accept: ['image/jpeg', 'image/png', 'image/webp'],
+          maxFileSize: toSafeInt(8 * 1024 * 1024),
+        },
+      ],
+      edges: [{ to: toNodeId('done'), when: { kind: 'always' } }],
+    },
+    done: { kind: 'terminal', outcome: toOutcomeId('submitted') },
+  } as Readonly<Record<NodeId, FlowSchema['nodes'][NodeId]>>,
+})
 
 export const meta = (at = 1, source: CommandMeta['source'] = 'human'): CommandMeta => ({
   at: toSafeInt(at),

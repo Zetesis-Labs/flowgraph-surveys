@@ -16,6 +16,8 @@ import type {
 import type { FlowSession } from '@flowgraph/session'
 import type { ComponentType } from 'react'
 
+import type { AttachmentFileStore } from './attachments/attachment-store.js'
+
 export type CommandMetaFactory = () => CommandMeta
 
 export type FlowView = {
@@ -75,6 +77,8 @@ export type RendererRegistry = {
   readonly byKind?: Readonly<Partial<Record<Question['kind'], QuestionRenderer>>>
   readonly byId?: Readonly<Partial<Record<QuestionId, QuestionRenderer>>>
 }
+
+export type { AttachmentFileStore }
 
 export type ResolveText = (text: TextRef) => string | undefined
 

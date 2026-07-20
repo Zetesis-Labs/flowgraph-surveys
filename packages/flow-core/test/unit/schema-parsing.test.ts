@@ -30,6 +30,16 @@ const validSchema = {
             },
           ],
         },
+        {
+          kind: 'attachment',
+          id: 'photos',
+          text: { key: 'photos', fallback: 'Photos' },
+          required: true,
+          minFiles: 1,
+          maxFiles: 4,
+          accept: ['image/jpeg', 'image/png', 'image/webp'],
+          maxFileSize: 8388608,
+        },
       ],
       edges: [{ to: 'done', when: { kind: 'always' } }],
     },
@@ -48,12 +58,13 @@ describe('parseSchema', () => {
     const input = structuredClone(validSchema) as unknown as {
       nodes: {
         page: {
-          questions: [{ min: number }, { options: [{ weight: number }] }]
+          questions: [{ min: number }, { options: [{ weight: number }] }, { maxFileSize: number }]
         }
       }
     }
     input.nodes.page.questions[0].min = -0
     input.nodes.page.questions[1].options[0].weight = -0
+    input.nodes.page.questions[2].maxFileSize = -0
 
     const result = parseSchema(input)
 
@@ -67,6 +78,33 @@ describe('parseSchema', () => {
         )
       }
     }
+  })
+
+  it('parses strict attachment constraints and rejects unknown fields', () => {
+    const parsed = parseSchema(validSchema)
+    expect(parsed.ok).toBe(true)
+    if (parsed.ok) {
+      const page = parsed.value.nodes[toNodeId('page')]
+      expect(page?.kind).toBe('page')
+      if (page?.kind === 'page') {
+        expect(page.questions[2]).toMatchObject({ kind: 'attachment', maxFiles: 4 })
+      }
+    }
+    const attachment = validSchema.nodes.page.questions[2] as unknown as Readonly<
+      Record<string, unknown>
+    >
+    expect(
+      parseSchema({
+        ...validSchema,
+        nodes: {
+          ...validSchema.nodes,
+          page: {
+            ...validSchema.nodes.page,
+            questions: [{ ...attachment, capture: true }],
+          },
+        },
+      }).ok,
+    ).toBe(false)
   })
 
   it.each([

@@ -29,3 +29,8 @@ export type {
 } from './persistence/types.js'
 export { createBrowserEventStore } from './persistence/browser-event-store.js'
 export { persistSession } from './persistence/persist-session.js'
+export {
+  createAttachmentFileStore,
+  type AttachmentFileStore,
+} from './attachments/attachment-store.js'
+export { AttachmentRenderer } from './renderers/attachment-renderer.js'

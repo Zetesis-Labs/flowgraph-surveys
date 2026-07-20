@@ -1,5 +1,6 @@
 import {
   hashSchema,
+  toAttachmentId,
   toNodeId,
   toOptionId,
   toOutcomeId,
@@ -18,6 +19,7 @@ export const qAge = toQuestionId('age')
 export const qReason = toQuestionId('reason')
 export const qChannels = toQuestionId('channels')
 export const qNotes = toQuestionId('notes')
+export const qPhotos = toQuestionId('photos')
 
 export const optionSleep = toOptionId('sleep')
 export const optionStress = toOptionId('stress')
@@ -27,6 +29,39 @@ export const qBookTitle = toQuestionId('book-title')
 export const qBookFormat = toQuestionId('book-format')
 export const optionPaper = toOptionId('paper')
 export const optionDigital = toOptionId('digital')
+
+export const attachmentSchema = (): FlowSchema => ({
+  id: toSchemaId('react-attachment-survey'),
+  version: toSchemaVersion('1.0.0'),
+  entry: toNodeId('photos'),
+  nodes: {
+    photos: {
+      kind: 'page',
+      title: { key: 'page.photos', fallback: 'Fotografías' },
+      questions: [
+        {
+          kind: 'attachment',
+          id: qPhotos,
+          text: { key: 'question.photos', fallback: 'Adjunta imágenes' },
+          required: true,
+          minFiles: toSafeInt(1),
+          maxFiles: toSafeInt(4),
+          accept: ['image/jpeg', 'image/png', 'image/webp'],
+          maxFileSize: toSafeInt(8 * 1024 * 1024),
+        },
+      ],
+      edges: [{ to: toNodeId('done'), when: { kind: 'always' } }],
+    },
+    done: { kind: 'terminal', outcome: toOutcomeId('submitted') },
+  } as Readonly<Record<NodeId, FlowSchema['nodes'][NodeId]>>,
+})
+
+export const attachmentRef = (name = 'front.jpg') => ({
+  id: toAttachmentId(`ref-${name}`),
+  name,
+  mediaType: 'image/jpeg',
+  size: toSafeInt(1024),
+})
 
 export const surveySchema = (): FlowSchema => ({
   id: toSchemaId('react-adapter-survey'),

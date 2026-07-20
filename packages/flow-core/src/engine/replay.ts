@@ -3,7 +3,7 @@ import type { Event } from '../domain/event.js'
 import type { NodeId } from '../domain/ids.js'
 import type { Problem } from '../domain/problem.js'
 import { err, ok, type Result } from '../domain/result.js'
-import type { AnswerValue, FlowSchema } from '../domain/schema.js'
+import type { AnswerValue, AttachmentRef, FlowSchema } from '../domain/schema.js'
 import type { FlowState } from '../domain/state.js'
 import { hashSchema } from '../integrity/schema-hash.js'
 import { upcastEvents } from '../parsing/upcast.js'
@@ -26,7 +26,19 @@ const samePath = (left: Event['path'], right: Event['path']): boolean =>
 
 const sameAnswer = (left: AnswerValue, right: AnswerValue): boolean =>
   Array.isArray(left) && Array.isArray(right)
-    ? left.length === right.length && left.every((value, index) => value === right[index])
+    ? left.length === right.length &&
+      (left as readonly unknown[]).every((value, index) => {
+        const candidate: unknown = (right as readonly unknown[])[index]
+        if (typeof value === 'string' || typeof candidate === 'string') return value === candidate
+        const leftAttachment = value as AttachmentRef
+        const rightAttachment = candidate as AttachmentRef
+        return (
+          leftAttachment.id === rightAttachment.id &&
+          leftAttachment.name === rightAttachment.name &&
+          leftAttachment.mediaType === rightAttachment.mediaType &&
+          leftAttachment.size === rightAttachment.size
+        )
+      })
     : left === right
 
 const sameEvent = (left: ReplayEvent, right: ReplayEvent): boolean => {

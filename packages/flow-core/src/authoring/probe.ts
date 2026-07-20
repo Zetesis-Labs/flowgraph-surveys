@@ -1,7 +1,14 @@
 import type { NodeId, QuestionId, SafeInt } from '../domain/ids.js'
-import { toNodeId, toSafeInt } from '../domain/ids.js'
+import { toAttachmentId, toNodeId, toSafeInt } from '../domain/ids.js'
 import type { SchemaProblem } from '../domain/problem.js'
-import type { AnswerValue, FlowSchema, Guard, PageNode, Question } from '../domain/schema.js'
+import type {
+  AnswerValue,
+  FlowSchema,
+  Guard,
+  NumericExpr,
+  PageNode,
+  Question,
+} from '../domain/schema.js'
 import type { FlowState, ProbePageReport, ProbeReport } from '../domain/state.js'
 import { evaluateGuard } from '../semantics/evaluate.js'
 import { currentPageProblems } from '../semantics/validate.js'
@@ -50,6 +57,28 @@ const numericLiterals = (guard: Guard): readonly number[] => {
   }
 }
 
+const guardQuestions = (guard: Guard): readonly QuestionId[] => {
+  const numericQuestions = (expression: NumericExpr): readonly QuestionId[] => {
+    if (expression.kind === 'answer' || expression.kind === 'score') return [expression.q]
+    if (expression.kind === 'sum') return expression.values.flatMap(numericQuestions)
+    return []
+  }
+  switch (guard.kind) {
+    case 'always':
+      return []
+    case 'answered':
+    case 'selected':
+      return [guard.q]
+    case 'not':
+      return guardQuestions(guard.value)
+    case 'all':
+    case 'any':
+      return guard.values.flatMap(guardQuestions)
+    case 'cmp':
+      return [...numericQuestions(guard.left), ...numericQuestions(guard.right)]
+  }
+}
+
 const safeCandidate = (
   value: number,
   question: Question & { readonly kind: 'number' },
@@ -68,6 +97,20 @@ const subsets = (question: Question & { readonly kind: 'select' }): readonly Ans
 
 const domainFor = (question: Question, thresholds: readonly number[]): readonly Candidate[] => {
   if (question.kind === 'text') return [undefined, 'x']
+  if (question.kind === 'attachment') {
+    const minimum = Math.max(1, question.minFiles ?? (question.required === true ? 1 : 0))
+    const mediaType = question.accept?.[0] ?? 'application/octet-stream'
+    const size = toSafeInt(Math.min(question.maxFileSize ?? 1, 1))
+    return [
+      undefined,
+      Array.from({ length: minimum }, (_, index) => ({
+        id: toAttachmentId(`probe-attachment-${String(index + 1)}`),
+        name: `probe-${String(index + 1)}.bin`,
+        mediaType,
+        size,
+      })),
+    ]
+  }
   if (question.kind === 'select') {
     return question.multiple
       ? [undefined, ...subsets(question)]
@@ -101,7 +144,27 @@ const assignmentAt = (
 
 const explorePage = (schema: FlowSchema, nodeId: NodeId, page: PageNode): ProbePageReport => {
   const thresholds = page.edges.flatMap(({ when }) => numericLiterals(when))
-  const domains = page.questions.map((question) => domainFor(question, thresholds))
+  const path = pathTo(schema, nodeId)
+  const pathNodes = path
+    .map((id) => schema.nodes[id])
+    .filter((node): node is PageNode => node?.kind === 'page')
+  const questionsById = new Map(
+    pathNodes.flatMap((node) => node.questions).map((question) => [question.id, question]),
+  )
+  const pageQuestionIds = new Set(page.questions.map(({ id }) => id))
+  const externalQuestions = Array.from(
+    new Set(page.edges.flatMap(({ when }) => guardQuestions(when))),
+  )
+    .filter((questionId) => !pageQuestionIds.has(questionId))
+    .map((questionId) => questionsById.get(questionId))
+    .filter((question): question is Question => question !== undefined)
+  const questions = [...externalQuestions, ...page.questions]
+  const domains = questions.map((question, index) => {
+    const domain = domainFor(question, thresholds)
+    return index < externalQuestions.length && question.required === true
+      ? domain.filter((candidate) => candidate !== undefined)
+      : domain
+  })
   const candidateSpace = domains.reduce((total, domain) => total * BigInt(domain.length), 1n)
   const explored = Number(
     candidateSpace > BigInt(ASSIGNMENT_LIMIT) ? ASSIGNMENT_LIMIT : candidateSpace,
@@ -110,12 +173,12 @@ const explorePage = (schema: FlowSchema, nodeId: NodeId, page: PageNode): ProbeP
   let deadEndsFound = 0
 
   for (let ordinal = 0; ordinal < explored; ordinal += 1) {
-    const answers = assignmentAt(page.questions, domains, ordinal)
+    const answers = assignmentAt(questions, domains, ordinal)
     const state: FlowState = {
       status: 'active',
       schemaId: schema.id,
       schemaVersion: schema.version,
-      trail: pathTo(schema, nodeId),
+      trail: path,
       answers,
     }
     const valid = currentPageProblems(schema, state).length === 0
@@ -131,7 +194,7 @@ const explorePage = (schema: FlowSchema, nodeId: NodeId, page: PageNode): ProbeP
     candidateSpace: candidateSpace.toString(),
     explored,
     truncated: candidateSpace > BigInt(ASSIGNMENT_LIMIT),
-    numericSampling: page.questions.some(({ kind }) => kind === 'number'),
+    numericSampling: questions.some(({ kind }) => kind === 'number'),
     deadEndsFound,
     witnesses,
   }

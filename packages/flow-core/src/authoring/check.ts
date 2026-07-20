@@ -182,15 +182,26 @@ export const check = (schema: FlowSchema): readonly SchemaProblem[] => {
   }
   nodes.forEach(([nodeId]) => visitCycle(nodeId, []))
 
-  const reachesTerminal = (nodeId: NodeId, visiting: ReadonlySet<NodeId>): boolean => {
-    const node = schema.nodes[nodeId]
-    if (!node || visiting.has(nodeId)) return false
-    if (node.kind === 'terminal') return true
-    const next = new Set(visiting).add(nodeId)
-    return node.edges.some(({ to }) => reachesTerminal(to, next))
+  const predecessors = new Map<NodeId, NodeId[]>()
+  const terminalReachable = new Set<NodeId>()
+  nodes.forEach(([nodeId, node]) => {
+    if (node.kind === 'terminal') terminalReachable.add(nodeId)
+    if (node.kind !== 'page') return
+    node.edges.forEach(({ to }) => {
+      const previous = predecessors.get(to) ?? []
+      predecessors.set(to, [...previous, nodeId])
+    })
+  })
+  const queue = [...terminalReachable]
+  for (const nodeId of queue) {
+    for (const predecessor of predecessors.get(nodeId) ?? []) {
+      if (terminalReachable.has(predecessor)) continue
+      terminalReachable.add(predecessor)
+      queue.push(predecessor)
+    }
   }
   for (const [nodeId, node] of nodes) {
-    if (node.kind === 'page' && !reachesTerminal(nodeId, new Set())) {
+    if (node.kind === 'page' && !terminalReachable.has(nodeId)) {
       problems.push(issue('error', 'no-terminal-reachable', { node: nodeId }))
     }
   }
@@ -245,7 +256,17 @@ export const check = (schema: FlowSchema): readonly SchemaProblem[] => {
           question.min !== undefined &&
           question.max !== undefined &&
           question.min > question.max) ||
-        (question.kind === 'text' && question.maxLength !== undefined && question.maxLength < 0)
+        (question.kind === 'text' && question.maxLength !== undefined && question.maxLength < 0) ||
+        (question.kind === 'attachment' &&
+          ((question.minFiles !== undefined && question.minFiles < 0) ||
+            (question.maxFiles !== undefined && question.maxFiles < 0) ||
+            (question.minFiles !== undefined &&
+              question.maxFiles !== undefined &&
+              question.minFiles > question.maxFiles) ||
+            (question.maxFileSize !== undefined && question.maxFileSize < 0) ||
+            (question.accept !== undefined &&
+              (question.accept.some((mediaType) => mediaType.length === 0) ||
+                new Set(question.accept).size !== question.accept.length))))
       ) {
         problems.push(issue('error', 'invalid-constraint', { node: page, question: question.id }))
       }

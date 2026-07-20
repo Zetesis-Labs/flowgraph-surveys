@@ -42,6 +42,29 @@ describe('parseEvents', () => {
     expect(parseEvents([{ ...events[1], value: ['same', 'same'] }]).ok).toBe(false)
   })
 
+  it('parses strict serializable attachment answers', () => {
+    const value = [
+      {
+        id: 'fit-front',
+        name: 'front.webp',
+        mediaType: 'image/webp',
+        size: 2048,
+      },
+    ]
+    expect(parseEvents([{ ...events[1], value }])).toEqual({
+      ok: true,
+      value: [{ ...events[1], value }],
+    })
+    expect(parseCommand({ kind: 'ANSWER', meta, q: 'photos', value })).toEqual({
+      ok: true,
+      value: { kind: 'ANSWER', meta, q: 'photos', value },
+    })
+    expect(parseEvents([{ ...events[1], value: [{ ...value[0], bytes: 'secret' }] }]).ok).toBe(
+      false,
+    )
+    expect(parseEvents([{ ...events[1], value: [value[0], value[0]] }]).ok).toBe(false)
+  })
+
   it.each([
     ['unknown version', [{ ...events[0], v: 2 }]],
     ['unknown kind', [{ ...events[0], kind: 'MIGRATED' }]],

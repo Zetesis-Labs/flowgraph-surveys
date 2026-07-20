@@ -7,6 +7,7 @@ import {
   type QuestionId,
 } from '../domain/ids.js'
 import type {
+  AttachmentRef,
   AnswerValue,
   FlowSchema,
   Guard,
@@ -37,6 +38,27 @@ export const findQuestion = (
   return undefined
 }
 
+const isAttachmentRef = (attachment: unknown): attachment is AttachmentRef => {
+  if (typeof attachment !== 'object' || attachment === null || Array.isArray(attachment)) {
+    return false
+  }
+  const record = attachment as Readonly<Record<string, unknown>>
+  const id = record.id
+  const name = record.name
+  const mediaType = record.mediaType
+  const size = record.size
+  return (
+    typeof id === 'string' &&
+    id.length > 0 &&
+    typeof name === 'string' &&
+    name.length > 0 &&
+    typeof mediaType === 'string' &&
+    mediaType.length > 0 &&
+    isSafeInt(size) &&
+    size >= 0
+  )
+}
+
 export const isTypedAnswer = (question: Question, value: AnswerValue): boolean => {
   switch (question.kind) {
     case 'text':
@@ -45,6 +67,8 @@ export const isTypedAnswer = (question: Question, value: AnswerValue): boolean =
       return isSafeInt(value)
     case 'select':
       return Array.isArray(value) && value.every((option) => typeof option === 'string')
+    case 'attachment':
+      return Array.isArray(value) && (value as readonly unknown[]).every(isAttachmentRef)
   }
 }
 

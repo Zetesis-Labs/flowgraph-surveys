@@ -16,7 +16,14 @@ import {
   type FlowSchema,
   type FlowState,
 } from '../../src/index.js'
-import { command, event, meta, simpleSchema } from '../support/builders.js'
+import {
+  attachment,
+  attachmentSchema,
+  command,
+  event,
+  meta,
+  simpleSchema,
+} from '../support/builders.js'
 import { retailSchema } from '../fixtures/retail/journeys.js'
 
 const record = (
@@ -200,6 +207,26 @@ describe('replay', () => {
     expect(replay(retailSchema, log)).toMatchObject({
       ok: true,
       value: { answers: { reason: ['other'] } },
+    })
+  })
+
+  it('replays attachment metadata by deep ordered value equality', () => {
+    const schema = attachmentSchema()
+    const start = startedLog(schema)[0]
+    if (!start) throw new Error('test setup failed')
+    const state = apply(initialState(schema), start)
+    const value = [attachment('front.jpg'), attachment('side.png', { mediaType: 'image/png' })]
+    const answered = decide(schema, state, command('ANSWER', { q: toQuestionId('photos'), value }))
+    expect(answered.ok).toBe(true)
+    if (!answered.ok) return
+    expect(replay(schema, [start, ...answered.value])).toMatchObject({
+      ok: true,
+      value: { answers: { photos: value } },
+    })
+    const serialized = JSON.parse(JSON.stringify([start, ...answered.value])) as readonly Event[]
+    expect(replay(schema, serialized)).toMatchObject({
+      ok: true,
+      value: { answers: { photos: value } },
     })
   })
 })

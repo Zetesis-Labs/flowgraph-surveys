@@ -10,7 +10,11 @@ export type SchemaHash = string & Brand<'SchemaHash'>
 export type NodeId = string & Brand<'NodeId'>
 export type QuestionId = string & Brand<'QuestionId'>
 export type OptionId = string & Brand<'OptionId'>
+export type AttachmentId = string & Brand<'AttachmentId'>
 export type OutcomeId = string & Brand<'OutcomeId'>
+export type PackId = string & Brand<'PackId'>
+export type PackInstanceId = string & Brand<'PackInstanceId'>
+export type PackPortId = string & Brand<'PackPortId'>
 export type SafeInt = number & Brand<'SafeInt'>
 
 export type TextRef = {
@@ -31,4 +35,8 @@ export const toSchemaHash = (value: string): SchemaHash => value as SchemaHash
 export const toNodeId = (value: string): NodeId => value as NodeId
 export const toQuestionId = (value: string): QuestionId => value as QuestionId
 export const toOptionId = (value: string): OptionId => value as OptionId
+export const toAttachmentId = (value: string): AttachmentId => value as AttachmentId
 export const toOutcomeId = (value: string): OutcomeId => value as OutcomeId
+export const toPackId = (value: string): PackId => value as PackId
+export const toPackInstanceId = (value: string): PackInstanceId => value as PackInstanceId
+export const toPackPortId = (value: string): PackPortId => value as PackPortId

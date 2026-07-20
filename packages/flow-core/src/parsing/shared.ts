@@ -27,12 +27,24 @@ export const commandMetaSchema = z.strictObject({
   path: z.array(pathSegmentSchema).length(0),
 })
 
+export const attachmentRefSchema = z.strictObject({
+  id: nonEmptyStringSchema,
+  name: nonEmptyStringSchema,
+  mediaType: nonEmptyStringSchema,
+  size: nonNegativeSafeIntSchema,
+})
+
 export const answerValueSchema = z.union([
   z.string(),
   safeIntSchema,
   z.array(nonEmptyStringSchema).superRefine((values, context) => {
     if (new Set(values).size !== values.length) {
       context.addIssue({ code: 'custom', message: 'Option ids must be unique' })
+    }
+  }),
+  z.array(attachmentRefSchema).superRefine((values, context) => {
+    if (new Set(values.map(({ id }) => id)).size !== values.length) {
+      context.addIssue({ code: 'custom', message: 'Attachment ids must be unique' })
     }
   }),
 ])

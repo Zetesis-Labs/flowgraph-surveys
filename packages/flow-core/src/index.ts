@@ -1,7 +1,11 @@
 export type {
+  AttachmentId,
   NodeId,
   OptionId,
   OutcomeId,
+  PackId,
+  PackInstanceId,
+  PackPortId,
   QuestionId,
   SafeInt,
   SchemaHash,
@@ -12,9 +16,13 @@ export type {
 export {
   isSafeInt,
   normalizeSafeInt,
+  toAttachmentId,
   toNodeId,
   toOptionId,
   toOutcomeId,
+  toPackId,
+  toPackInstanceId,
+  toPackPortId,
   toQuestionId,
   toSafeInt,
   toSchemaHash,
@@ -34,7 +42,23 @@ export type {
 export type { Result } from './domain/result.js'
 export { err, ok } from './domain/result.js'
 export type {
+  CompositionProblem,
+  CompositionProblemCode,
+  FlowComposition,
+  FlowPack,
+  PackConnection,
+  PackEntry,
+  PackFactory,
+  PackInstance,
+  PackOutlet,
+  PackProblem,
+  PackProblemCode,
+  PackTarget,
+} from './domain/pack.js'
+export type {
   AnswerValue,
+  AttachmentQuestion,
+  AttachmentRef,
   ComparisonOperator,
   Edge,
   FlowSchema,
@@ -66,6 +90,7 @@ export type {
 } from './domain/state.js'
 export { parseCommand, parseEvents } from './parsing/event.js'
 export { parseSchema } from './parsing/schema.js'
+export { parseComposition, parsePack } from './parsing/pack.js'
 export { upcastEvents } from './parsing/upcast.js'
 export { allTruth, anyTruth, notTruth } from './semantics/truth.js'
 export { evaluateGuard, evaluateNumeric } from './semantics/evaluate.js'
@@ -92,5 +117,13 @@ export {
 } from './selectors/navigation.js'
 export { progress } from './selectors/progress.js'
 export { check } from './authoring/check.js'
+export {
+  checkPack,
+  compileComposition,
+  namespaceNodeId,
+  namespaceOptionId,
+  namespaceOutcomeId,
+  namespaceQuestionId,
+} from './authoring/compose.js'
 export { probe } from './authoring/probe.js'
 export { runGoldens } from './authoring/golden.js'

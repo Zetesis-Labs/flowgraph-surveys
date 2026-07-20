@@ -1,4 +1,5 @@
 import type {
+  AttachmentId,
   NodeId,
   OptionId,
   OutcomeId,
@@ -35,7 +36,7 @@ export type Edge = {
   readonly when: Guard
 }
 
-export type Question = TextQuestion | NumberQuestion | SelectQuestion
+export type Question = TextQuestion | NumberQuestion | SelectQuestion | AttachmentQuestion
 
 export type QuestionBase = {
   readonly id: QuestionId
@@ -61,13 +62,28 @@ export type SelectQuestion = QuestionBase & {
   readonly options: readonly Option[]
 }
 
+export type AttachmentQuestion = QuestionBase & {
+  readonly kind: 'attachment'
+  readonly minFiles?: SafeInt
+  readonly maxFiles?: SafeInt
+  readonly accept?: readonly string[]
+  readonly maxFileSize?: SafeInt
+}
+
+export type AttachmentRef = {
+  readonly id: AttachmentId
+  readonly name: string
+  readonly mediaType: string
+  readonly size: SafeInt
+}
+
 export type Option = {
   readonly id: OptionId
   readonly text: TextRef
   readonly weight?: SafeInt
 }
 
-export type AnswerValue = string | SafeInt | readonly OptionId[]
+export type AnswerValue = string | SafeInt | readonly OptionId[] | readonly AttachmentRef[]
 
 export type Truth = 'true' | 'false' | 'unknown'
 
